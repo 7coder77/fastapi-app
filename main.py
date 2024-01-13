@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, Column, Integer, String, MetaData, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import databases
+from fastapi.middleware.cors import CORSMiddleware
 
 DATABASE_URL = "sqlite:///./test.db"
 
@@ -91,6 +92,14 @@ async def delete_user(user_id: int):
             return {"message": f"User {user_id} deleted successfully"}
         else:
             raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+origins = ["*"]           
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__=="__main__":
-    uvicorn.run(app)
+    uvicorn.run("main:app",reload=True)
