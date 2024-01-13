@@ -80,5 +80,17 @@ async def read_users(skip: int = 0, limit: int = 10):
     query = users.select().offset(skip).limit(limit)
     return await database.fetch_all(query)
 
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int):
+    async with database.transaction():
+        db = SessionLocal()
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            db.delete(user)
+            db.commit()
+            return {"message": f"User {user_id} deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+
 if __name__=="__main__":
     uvicorn.run(app)
