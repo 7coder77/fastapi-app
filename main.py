@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import databases
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 DATABASE_URL = "sqlite:///./test.db"
 
@@ -33,6 +34,10 @@ metadata.create_all(bind=engine)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+class Val_User(BaseModel):
+    username:str
+    password:str
 
 class User(Base):
     __tablename__ = "users"
@@ -94,6 +99,21 @@ async def delete_user(user_id: int):
             return {"message": f"User {user_id} deleted successfully"}
         else:
             raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+
+@app.post("/Auth_user")
+async def auth_user(jsn:Val_User):
+    print("--------")
+    print("inside fun",jsn.password)
+    # query = users.select().where(users.c.password == jsn.password)
+    # user_data=database.fetch_one(query)
+    db = SessionLocal()
+    user_data = db.query(User).filter(User.name == jsn.username  ,User.password == jsn.password).first()
+    print(user_data)
+    if user_data:
+        return {"res": "true", "message": "Authentication successful"}
+    else:
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
 origins = ["*"]           
 app.add_middleware(
     CORSMiddleware,
