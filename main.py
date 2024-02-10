@@ -24,6 +24,7 @@ users = Table(
     Column("id", Integer, primary_key=True, index=True),
     Column("name", String, index=True),
     Column("email", String, unique=True, index=True),
+    Column("password", String, unique=True, index=True),
 )
 
 engine = create_engine(DATABASE_URL)
@@ -39,6 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
+    password = Column(String, unique=True, index=True)
 
 app = FastAPI()
 
@@ -62,8 +64,8 @@ async def download_file(filename: str):
     return StreamingResponse(open(file_path, "rb"), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})
 
 @app.post("/users/")
-async def create_user(name: str, email: str):
-    user = User(name=name, email=email)
+async def create_user(name: str, email: str, password:str):
+    user = User(name=name, email=email,password=password)
     async with database.transaction():
         db = SessionLocal()
         db.add(user)
