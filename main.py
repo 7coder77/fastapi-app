@@ -109,6 +109,7 @@ async def auth_user(jsn:Val_User):
     db = SessionLocal()
     user_data = db.query(User).filter(User.name == jsn.username  ,User.password == jsn.password).first()
     print(user_data)
+    print("check logs---->>>>")
     if user_data:
         return {"res": "true", "message": "Authentication successful"}
     else:
