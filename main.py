@@ -28,6 +28,15 @@ users = Table(
     Column("password", String, unique=True, index=True),
 )
 
+components = Table(
+    "components",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("title", String, index=True),
+    Column("summary", String),
+    Column("link", String),
+)
+
 engine = create_engine(DATABASE_URL)
 metadata.create_all(bind=engine)
 
@@ -39,6 +48,11 @@ class Val_User(BaseModel):
     username:str
     password:str
 
+class ComponentSchema(BaseModel):
+    title: str
+    summary: str
+    link: str
+
 class User(Base):
     __tablename__ = "users"
 
@@ -46,6 +60,14 @@ class User(Base):
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String, unique=True, index=True)
+
+class Component(Base):
+    __tablename__ = "components"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    summary = Column(String)
+    link = Column(String)
 
 app = FastAPI()
 
@@ -114,6 +136,23 @@ async def auth_user(jsn:Val_User):
         return {"res": "true", "message": "Authentication successful"}
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
+
+@app.post("/components")
+async def create_component(component:ComponentSchema):
+    component = Component(title=component.title, summary=component.summary, link=component.link)
+    async with database.transaction():
+        db = SessionLocal()
+        db.add(component)
+        db.commit()
+        db.refresh(component)
+    return component
+
+@app.get("/GetAdminData")
+async def getData():
+    async with database.transaction():
+        db = SessionLocal()
+        components = db.query(Component).all()
+    return components
 
 origins = ["*"]           
 app.add_middleware(
