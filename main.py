@@ -167,7 +167,9 @@ async def create_component(component:ComponentSchemaUpdate):
             result.summary = component.summary
             result.link = component.link
             db.commit()
-        return result
+        else:
+            raise HTTPException(status_code=404, detail="Data Not Found")
+        return {"message": "Data Updated"}
 
 @app.get("/GetAdminData")
 async def getData():
