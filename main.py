@@ -1,6 +1,8 @@
 from typing import Optional
 
 import uvicorn
+import json
+import pandas as pd
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
@@ -49,6 +51,11 @@ class Val_User(BaseModel):
     password:str
 
 class ComponentSchema(BaseModel):
+    title: str
+    summary: str
+    link: str
+class ComponentSchemaUpdate(BaseModel):
+    id: int
     title: str
     summary: str
     link: str
@@ -146,6 +153,21 @@ async def create_component(component:ComponentSchema):
         db.commit()
         db.refresh(component)
     return component
+@app.put("/components")
+async def create_component(component:ComponentSchemaUpdate):
+    async with database.transaction():
+        db=SessionLocal()
+        result=db.query(Component).filter(Component.id==component.id).first()
+        if result:
+            # Convert the SQLAlchemy result into a Pandas DataFrame
+            df = pd.DataFrame([vars(result)])  # Convert the result object to a dictionary and then to a DataFrame
+            print(df)
+            # Convert the DataFrame to JSON and print it
+            result.title = component.title
+            result.summary = component.summary
+            result.link = component.link
+            db.commit()
+        return result
 
 @app.get("/GetAdminData")
 async def getData():
