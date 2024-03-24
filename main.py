@@ -177,6 +177,14 @@ async def getData():
         db = SessionLocal()
         components = db.query(Component).all()
     return components
+@app.delete("/Del_Componet/{id}")
+async def getData(id:int):
+    async with database.transaction():
+        db = SessionLocal()
+        components = db.query(Component).filter(Component.id==id).first()
+        db.delete(components)
+        db.commit()
+    return {"msg":"Deleted successfully"}
 
 origins = ["*"]           
 app.add_middleware(
