@@ -3,6 +3,9 @@ from typing import Optional
 import uvicorn
 import json
 import pandas as pd
+from sqlalchemy import Boolean
+from sqlalchemy import func
+
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
@@ -38,6 +41,15 @@ components = Table(
     Column("summary", String),
     Column("link", String),
 )
+components = Table(
+    "contact",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("name", String, index=True),
+    Column("email", String),
+    Column("msg", String),
+    Column("visited", Boolean),
+)
 
 engine = create_engine(DATABASE_URL)
 metadata.create_all(bind=engine)
@@ -60,6 +72,11 @@ class ComponentSchemaUpdate(BaseModel):
     summary: str
     link: str
 
+class ContactObj(BaseModel):
+    name:str
+    email:str
+    msg:str
+
 class User(Base):
     __tablename__ = "users"
 
@@ -75,6 +92,15 @@ class Component(Base):
     title = Column(String, index=True)
     summary = Column(String)
     link = Column(String)
+
+class Contact(Base):
+    __tablename__ = "Contact"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String)
+    msg = Column(String)
+    visited = Column(Boolean) 
 
 app = FastAPI()
 
@@ -185,6 +211,38 @@ async def getData(id:int):
         db.delete(components)
         db.commit()
     return {"msg":"Deleted successfully"}
+
+@app.post('/contact')
+async def postContact(ContactObj:ContactObj):
+    result=Contact(name=ContactObj.name,msg=ContactObj.msg,email=ContactObj.email , visited=False)
+    async with database.transaction():
+        db = SessionLocal()
+        db.add(result)
+        db.commit()
+        db.refresh(result)
+        return result
+        
+@app.get('/contact')
+async def getContact():
+    # result=Contact(name=ContactObj.name,msg=ContactObj.msg,email=ContactObj.email)
+    async with database.transaction():
+        db = SessionLocal()
+        result=db.query(Contact).all()
+        for i in result:
+            i.visited=True
+
+        
+        # db.add(result)
+        db.commit()
+        # db.refresh(result)
+        return result
+    
+@app.get('/contact-count')
+async def count():
+    async with database.transaction():
+        db = SessionLocal()
+        count = db.query(func.count()).filter(Contact.visited == False).scalar()
+        return {"count":count}
 
 origins = ["*"]           
 app.add_middleware(
