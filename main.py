@@ -223,19 +223,22 @@ async def postContact(ContactObj:ContactObj):
         return result
         
 @app.get('/contact')
-async def getContact():
-    # result=Contact(name=ContactObj.name,msg=ContactObj.msg,email=ContactObj.email)
+async def mark_all_contacts_visited():
     async with database.transaction():
         db = SessionLocal()
-        result=db.query(Contact).all()
-        for i in result:
-            i.visited=True
+        # Fetch all contacts
+        contacts = db.query(Contact).all()
+        
+        # Update the visited attribute for each contact
+        for contact in contacts:
+            contact.visited = True
+        
+        # Commit the changes to the database
+        db.commit()
 
         
-        # db.add(result)
-        db.commit()
-        # db.refresh(result)
-        return result
+        # Return the updated contacts
+        return db.query(Contact).all()
     
 @app.get('/contact-count')
 async def count():
