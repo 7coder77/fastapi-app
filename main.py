@@ -1,11 +1,11 @@
 from typing import Optional
 
 import uvicorn
-import json
+import json 
 import pandas as pd
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean,JSON,Date
 from sqlalchemy import func
-
+from datetime import datetime
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
@@ -17,7 +17,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import databases
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, conlist
 
 DATABASE_URL = "sqlite:///./test.db"
 
@@ -41,7 +41,7 @@ components = Table(
     Column("summary", String),
     Column("link", String),
 )
-components = Table(
+contact = Table(
     "contact",
     metadata,
     Column("id", Integer, primary_key=True, index=True),
@@ -49,6 +49,15 @@ components = Table(
     Column("email", String),
     Column("msg", String),
     Column("visited", Boolean),
+)
+Experience = Table(
+    "experience",
+    metadata,
+    Column("id", Integer, primary_key=True, index=True),
+    Column("name", String, index=True),
+    Column("skills", JSON),
+    Column("startDate", String),
+    Column("endDate", Boolean),
 )
 
 engine = create_engine(DATABASE_URL)
@@ -77,6 +86,15 @@ class ContactObj(BaseModel):
     email:str
     msg:str
 
+class ExperienceInput(BaseModel):
+    name: str
+    skills: conlist(str)
+    startDate: str
+    endDate: str
+
+class resp(BaseModel):
+    item:conlist(ExperienceInput)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -101,6 +119,15 @@ class Contact(Base):
     email = Column(String)
     msg = Column(String)
     visited = Column(Boolean) 
+
+class Experience(Base):
+    __tablename__ = "Experience"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    skills = Column(JSON)
+    startDate = Column(Date)
+    endDate = Column(Date)
 
 app = FastAPI()
 
@@ -246,6 +273,27 @@ async def count():
         db = SessionLocal()
         count = db.query(func.count()).filter(Contact.visited == False).scalar()
         return {"count":count}
+
+@app.post("/experience")
+async def create_experience(experience_input: resp):
+    db = SessionLocal()
+    experiences = []
+    for exp_input in experience_input.item:
+        # Convert startDate and endDate strings to Python date objects
+        start_date = datetime.strptime(exp_input.startDate, "%d-%m-%Y").date()
+        end_date = datetime.strptime(exp_input.endDate, "%d-%m-%Y").date()
+        
+        experience_db = Experience(
+            name=exp_input.name,
+            skills=exp_input.skills,
+            startDate=start_date,
+            endDate=end_date
+        )
+        db.add(experience_db)
+        db.commit()
+        db.refresh(experience_db)
+        experiences.append(experience_db)
+    return experiences
 
 origins = ["*"]           
 app.add_middleware(
