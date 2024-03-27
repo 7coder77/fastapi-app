@@ -295,6 +295,12 @@ async def create_experience(experience_input: resp):
         experiences.append(experience_db)
     return experiences
 
+@app.get('/get-exp')
+async def getExperience():
+    db=SessionLocal()
+    result = db.query(Experience).order_by(Experience.startDate).all()
+    return result
+
 origins = ["*"]           
 app.add_middleware(
     CORSMiddleware,
