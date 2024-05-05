@@ -55,6 +55,7 @@ Experience = Table(
     metadata,
     Column("id", Integer, primary_key=True, index=True),
     Column("name", String, index=True),
+    Column("desc", String, index=True),
     Column("skills", JSON),
     Column("startDate", String),
     Column("endDate", Boolean),
@@ -88,6 +89,7 @@ class ContactObj(BaseModel):
 
 class ExperienceInput(BaseModel):
     name: str
+    desc: str
     skills: conlist(str)
     startDate: str
     endDate: str
@@ -125,6 +127,7 @@ class Experience(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    desc = Column(String, index=True)
     skills = Column(JSON)
     startDate = Column(Date)
     endDate = Column(Date)
@@ -285,6 +288,7 @@ async def create_experience(experience_input: resp):
         
         experience_db = Experience(
             name=exp_input.name,
+            desc=exp_input.desc,
             skills=exp_input.skills,
             startDate=start_date,
             endDate=end_date
